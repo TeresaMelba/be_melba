@@ -1,10 +1,16 @@
 # views.py (Django)
+import io
+import base64
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser
 import pandas as pd
-import numpy as np
+from rest_framework.parsers import MultiPartParser
 from sklearn.linear_model import LinearRegression
+from rest_framework.response import Response
+import numpy as np
+
 
 class SalesPredictionAPIView(APIView):
     parser_classes = [MultiPartParser]
@@ -33,7 +39,28 @@ class SalesPredictionAPIView(APIView):
         response_data = {
             'predicted_sales': predicted_sales.tolist(),
             'years': future_years.flatten().tolist(),
-            'competitor_sales': competitor_sales.tolist()
+            'competitor_sales': competitor_sales[:5].tolist()
         }
+
+        # Generate the plot
+        plt.figure(figsize=(10, 6))
+        plt.scatter(years, sales, color='blue', label='Your Sales')
+        plt.plot(years, model.predict(years), color='red', linestyle='-', label='Your Linear Regression')
+        plt.scatter(future_years, predicted_sales, color='green', label='Predicted Sales')
+        plt.scatter(years, competitor_sales, color='orange', label='Competitor Sales')
+        plt.xlabel('Year')
+        plt.ylabel('Sales')
+        plt.title('Sales Prediction and Competitor Comparison')
+        plt.legend()
+        plt.grid(True)
+
+        # Save the plot to a buffer
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png')
+        buffer.seek(0)
+
+        # Encode the plot image as base64
+        plot_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        response_data['plot_image_base64'] = plot_base64
 
         return Response(response_data)
