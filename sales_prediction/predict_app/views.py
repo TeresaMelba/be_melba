@@ -23,7 +23,7 @@ class SalesPredictionAPIView(APIView):
         filtered_data = data[['year', 'Sales', 'competitor sales']]
 
         # Extracting years, sales, and competitor sales from the filtered data
-        years = filtered_data['year'].values.reshape(-1, 1)
+        years = filtered_data['year'].values.reshape(-1, 1).astype(int)
         sales = filtered_data['Sales'].values
         competitor_sales = filtered_data['competitor sales'].values
 
@@ -53,6 +53,8 @@ class SalesPredictionAPIView(APIView):
         plt.title('Sales Prediction and Competitor Comparison')
         plt.legend()
         plt.grid(True)
+        years_int = [int(year[0]) for year in years]
+        plt.xticks(range(min(years_int), max(years_int) + 1, 1))
 
         # Save the plot to a buffer
         buffer = io.BytesIO()
